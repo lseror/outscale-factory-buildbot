@@ -29,7 +29,9 @@ def configure_status(c, fc, repos, meta):
     )
     c['status'].append(html.WebStatus(
         http_port=http_port,
-        authz=authz_cfg))
+        authz=authz_cfg,
+        change_hook_dialects=dict(base=True),
+    ))
 
     # PROJECT IDENTITY
 

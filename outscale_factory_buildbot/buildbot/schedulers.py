@@ -3,7 +3,7 @@ Scheduler configuration
 """
 
 from buildbot.schedulers.basic import SingleBranchScheduler
-from buildbot.schedulers.forcesched import ForceScheduler
+from buildbot.schedulers.forcesched import ForceScheduler, FixedParameter
 from buildbot.schedulers import timed
 from buildbot.changes import filter
 
@@ -42,7 +42,13 @@ def configure_schedulers(c, fc, repos, meta):
         builderNames = [name]
         c['schedulers'].append(ForceScheduler(
             name='force-{}'.format(name),
-            builderNames=builderNames))
+            builderNames=builderNames,
+            revision=FixedParameter(name="revision", default=""),
+            repository=FixedParameter(name="repository", default=""),
+            project=FixedParameter(name="project", default=""),
+            branch=FixedParameter(name="branch", default=branch),
+            properties=[],
+        ))
 
         change_filter = filter.ChangeFilter(
             project=appliance,

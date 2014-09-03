@@ -106,16 +106,25 @@ class CreateImage(_EC2BuildStep):
     Create image from the buildslave's build volume.
     """
 
-    def __init__(self, **kw):
+    def __init__(self, appliance=None, repourl=None, **kw):
         _EC2BuildStep.__init__(self, **kw)
+        if appliance is None:
+            raise TypeError('appliance argument is required')
+        if repourl is None:
+            raise TypeError('repourl argument is required')
+        self.appliance = appliance
+        self.repourl = repourl
+        self.addFactoryArguments(
+            appliance=appliance,
+            repourl=repourl)
 
     @defer.inlineCallbacks
     def start(self):
         """
         Start the buildstep.
         """
-        appliance = self.getProperty('appliance')
-        repository = self.getProperty('repository')
+        appliance = self.appliance
+        repourl = self.repourl
         branch = self.getProperty('branch')
         revision = self.getProperty('revision')
         volume_id = self.getProperty('volume_id')
@@ -127,7 +136,7 @@ class CreateImage(_EC2BuildStep):
         image_tags.update(dict(
             timestamp=image_timestamp,
             appliance=appliance,
-            repository=repository,
+            repourl=repourl,
             branch=branch,
             revision=revision,
         ))

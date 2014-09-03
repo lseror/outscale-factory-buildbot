@@ -30,49 +30,38 @@ def _parse_crontab_record(crontab):
 def configure_schedulers(c, fc, repos, meta):
     # Configure the Schedulers, which decide how to react to incoming changes.
 
-    builderNames = ['appliance_builder']
-
     c['schedulers'] = []
-    c['schedulers'].append(ForceScheduler(
-        name="force",
-        builderNames=builderNames))
 
     treeStableTimer = fc.get('tree_stable_timer_seconds', 120)
     enableNightlyScheduler = fc.get('nightly_scheduler', False)
     if enableNightlyScheduler:
         crontab = _parse_crontab_record(fc['nightly_crontab'])
 
-    # For some reason the nightly scheduler does not set the *repository* property.
-    # We cannot set it ourselves either.
-    # Set a custom repourl property and use it later in the buildsteps.
-
     for appliance, repourl, branch in repos:
         name = '-'.join((appliance, branch))
-        properties = dict(
-            appliance=appliance,
-            repourl=repourl
-        )
+        builderNames = [name]
+        c['schedulers'].append(ForceScheduler(
+            name='force-{}'.format(name),
+            builderNames=builderNames))
+
         change_filter = filter.ChangeFilter(
             project=appliance,
             branch=branch
         )
 
         c['schedulers'].append(SingleBranchScheduler(
-            name=name,
+            name='onchanges-{}'.format(name),
             builderNames=builderNames,
             change_filter=change_filter,
-            properties=properties,
             treeStableTimer=treeStableTimer,
         ))
 
         if enableNightlyScheduler:
-            nightlyName = 'nightly-{}'.format(name)
             c['schedulers'].append(timed.Nightly(
-                name=nightlyName,
+                name='nightly-{}'.format(name),
                 builderNames=builderNames,
-                branch=branch,
+                branch=branch, # Nightly requires a 'branch' argument
                 change_filter=change_filter,
-                properties=properties,
                 minute=crontab[0],
                 hour=crontab[1],
                 dayOfMonth=crontab[2],

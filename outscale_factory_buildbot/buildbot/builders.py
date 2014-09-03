@@ -6,7 +6,7 @@ import shlex
 from buildbot.process.factory import BuildFactory
 from buildbot.steps.source.git import Git
 from buildbot.steps.shell import ShellCommand
-from buildbot.process.properties import Property, WithProperties
+from buildbot.process.properties import Property
 from buildbot.config import BuilderConfig
 
 from outscale_factory_buildbot.buildbot import buildsteps
@@ -26,16 +26,8 @@ def configure_builders(c, fc, repos, meta):
     )
     mountPoint = fc.get('slave_build_mount_point', '/mnt/%s')
     workDir = fc.get('slave_build_work_dir', '/srv/%s')
-    optMountPoint = '='.join(('--mount-point', mountPoint))
-    optWorkDir = '='.join(('--work-dir', workDir))
-    buildCmd = fc.get('slave_build_command', 'build_ami -v')
-    buildCmd = shlex.split(buildCmd)
-    buildCmd.extend([
-        WithProperties("--turnkey-app=%s", "appliance"),
-        WithProperties("--device=%s", "device"),
-        WithProperties(optMountPoint, "appliance"),
-        WithProperties(optWorkDir, "appliance"),
-    ])
+    baseBuildCmd = fc.get('slave_build_command', 'build_ami -v')
+    baseBuildCmd = shlex.split(baseBuildCmd)
     masterAddr = 'http://' + meta['public-ipv4']
     aptProxyPort = fc.get('master_apt_proxy_port', 3142)
     httpProxyPort = fc.get('master_http_proxy_port', 8124)
@@ -44,52 +36,62 @@ def configure_builders(c, fc, repos, meta):
         FAB_HTTP_PROXY='{}:{}'.format(masterAddr, httpProxyPort)
     )
 
-    factory = BuildFactory()
-
-    factory.addStep(Git(
-        name='Cloning repository',
-        haltOnFailure=True,
-        repourl=Property('repourl'),
-        workdir=WithProperties('/turnkey/fab/products/%s', 'appliance'),
-        mode='incremental',
-        submodules=True))
-
-    factory.addStep(buildsteps.AttachNewVolume(
-        name='Creating build volume',
-        haltOnFailure=True,
-        **ec2Args))
-
-    factory.addStep(ShellCommand(
-        name='Building appliance',
-        haltOnFailure=True,
-        command=buildCmd + ['--build-only'],
-        env=buildEnv))
-
-    factory.addStep(buildsteps.CreateImage(
-        name='Creating image',
-        haltOnFailure=True,
-        **ec2Args))
-
-    factory.addStep(buildsteps.DestroyVolume(
-        name='Cleaning up volume',
-        alwaysRun=True,
-        **ec2Args))
-
-    factory.addStep(ShellCommand(
-        name='Cleaning up build dirs',
-        alwaysRun=True,
-        command=buildCmd + ['--clean-only'],
-        env=buildEnv))
-
-    c['builders'] = []
-
-    buildername = 'appliance_builder'
     mergeRequests = fc.get('merge_build_requests', False)
     slavenames = [slave.slavename for slave in c['slaves']]
 
-    c['builders'].append(
-        BuilderConfig(name=buildername,
-                      slavenames=slavenames,
-                      factory=factory,
-                      mergeRequests=mergeRequests)
-    )
+    c['builders'] = []
+    for appliance, repourl, branch in repos:
+        factory = BuildFactory()
+
+        buildCmd = baseBuildCmd + [
+            '--turnkey-app', appliance,
+            '--device', Property('device'),
+            '--mount-point', mountPoint % appliance,
+            '--work-dir', workDir % appliance,
+        ]
+
+        factory.addStep(Git(
+            name='Cloning repository',
+            haltOnFailure=True,
+            repourl=repourl,
+            workdir='/turnkey/fab/products/{}'.format(appliance),
+            mode='incremental',
+            branch=branch,
+            submodules=True))
+
+        factory.addStep(buildsteps.AttachNewVolume(
+            name='Creating build volume',
+            haltOnFailure=True,
+            **ec2Args))
+
+        factory.addStep(ShellCommand(
+            name='Building appliance',
+            haltOnFailure=True,
+            command=buildCmd + ['--build-only'],
+            env=buildEnv))
+
+        factory.addStep(buildsteps.CreateImage(
+            name='Creating image',
+            haltOnFailure=True,
+            repourl=repourl,
+            appliance=appliance,
+            **ec2Args))
+
+        factory.addStep(buildsteps.DestroyVolume(
+            name='Cleaning up volume',
+            alwaysRun=True,
+            **ec2Args))
+
+        factory.addStep(ShellCommand(
+            name='Cleaning up build dirs',
+            alwaysRun=True,
+            command=buildCmd + ['--clean-only'],
+            env=buildEnv))
+
+        buildername = '{}-{}'.format(appliance, branch)
+        c['builders'].append(
+            BuilderConfig(name=buildername,
+                        slavenames=slavenames,
+                        factory=factory,
+                        mergeRequests=mergeRequests)
+        )

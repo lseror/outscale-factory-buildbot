@@ -126,7 +126,7 @@ class CreateImage(_EC2BuildStep):
         appliance = self.appliance
         repourl = self.repourl
         branch = self.getProperty('branch')
-        revision = self.getProperty('revision')
+        revision = self.getProperty('got_revision')
         volume_id = self.getProperty('volume_id')
         image_description = self.getProperty('description', default=None)
         image_tags = self.getProperty('custom_tags', default={})

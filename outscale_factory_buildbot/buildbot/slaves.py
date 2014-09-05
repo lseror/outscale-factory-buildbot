@@ -3,7 +3,6 @@ Buildslaves configuration.
 """
 import boto
 
-# from buildbot.buildslave.ec2 import EC2LatentBuildSlave
 from buildbot.ec2buildslave import EC2LatentBuildSlave
 
 from outscale_factory_buildbot.tools.gen_password import generate_password
@@ -77,4 +76,5 @@ def configure_buildslaves(c, fc, repos, meta):
                 keypair_name=keypair,
                 security_name=security_group,
                 user_data=slave_user_data,
+                max_builds=1,
             ))

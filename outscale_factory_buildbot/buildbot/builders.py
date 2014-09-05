@@ -7,9 +7,34 @@ from buildbot.process.factory import BuildFactory
 from buildbot.steps.source.git import Git
 from buildbot.steps.shell import ShellCommand
 from buildbot.process.properties import Property
+from buildbot.process import slavebuilder
 from buildbot.config import BuilderConfig
 
 from outscale_factory_buildbot.buildbot import buildsteps
+
+
+def _choose_slave(builder, slave_builders):
+    # Pick the slave_builder to use for a build, based on its state.
+    # Prefer idle, then latent then building slaves.
+
+    preferred_states = [
+        slavebuilder.PINGING, # build about to start, making sure it is still alive
+        slavebuilder.ATTACHING, # slave attached, still checking hostinfo/etc
+        slavebuilder.SUBSTANTIATING,
+        slavebuilder.BUILDING, # build is running
+        slavebuilder.LATENT, # latent slave is not substantiated; similar to idle
+        slavebuilder.IDLE, # idle, available for use
+        ]
+
+    best = None
+    best_score = -1
+    for sb in slave_builders:
+        sb_score = preferred_states.index(sb.state)
+        if sb_score > best_score:
+            best = sb
+            best_score = sb_score
+    assert best
+    return best
 
 
 def configure_builders(c, fc, repos, meta):
@@ -103,5 +128,6 @@ def configure_builders(c, fc, repos, meta):
             BuilderConfig(name=buildername,
                         slavenames=slavenames,
                         factory=factory,
-                        mergeRequests=mergeRequests)
+                        mergeRequests=mergeRequests,
+                        nextSlave=_choose_slave)
         )

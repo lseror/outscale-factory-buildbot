@@ -64,8 +64,15 @@ def configure_builders(c, fc, repos, meta):
             haltOnFailure=True,
             **ec2Args))
 
+        # ShellCommand fails if `description` is not set: it tries to
+        # generate it from `command` but fails because `command`
+        # contains a Property. To avoid this, set `description` to the
+        # same value as `name`.
+        name = 'Building appliance'
         factory.addStep(ShellCommand(
-            name='Building appliance',
+            name=name,
+            description=name,
+            descriptionDone='Appliance built',
             haltOnFailure=True,
             command=buildCmd + ['--build-only'],
             env=buildEnv))
@@ -82,8 +89,11 @@ def configure_builders(c, fc, repos, meta):
             alwaysRun=True,
             **ec2Args))
 
+        name = 'Cleaning up build dirs'
         factory.addStep(ShellCommand(
-            name='Cleaning up build dirs',
+            name=name,
+            description=name,
+            descriptionDone='Build dirs cleaned',
             alwaysRun=True,
             command=buildCmd + ['--clean-only'],
             env=buildEnv))

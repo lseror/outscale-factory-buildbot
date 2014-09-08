@@ -114,6 +114,11 @@ def configure_builders(c, fc, repos, meta):
             alwaysRun=True,
             **ec2Args))
 
+        factory.addStep(buildsteps.DestroyOldImages(
+            name='Destroy old images',
+            appliance=appliance,
+            **ec2Args))
+
         name = 'Cleaning up build dirs'
         factory.addStep(ShellCommand(
             name=name,

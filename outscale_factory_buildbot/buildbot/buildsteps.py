@@ -5,6 +5,7 @@ The module is an asynchronous wrapper over create_ami, which does
 volume management and image creation operations synchronously with Boto.
 """
 
+import logging
 from datetime import datetime
 
 import boto.ec2
@@ -17,7 +18,12 @@ from buildbot.process.buildstep import BuildStep
 # from buildbot.buildslave.ec2 import EC2LatentBuildSlave
 from buildbot.ec2buildslave import EC2LatentBuildSlave
 
+from outscale_factory_buildbot.tools.delete_images import delete_images
+from outscale_factory_buildbot.tools.find_images import find_images
 from outscale_image_factory import create_ami
+
+# How many versions of an appliance image should be kept
+MAX_APPLIANCE_VERSIONS = 2
 
 
 class _EC2BuildStep(BuildStep):
@@ -183,3 +189,45 @@ class DestroyVolume(_EC2BuildStep):
             self.finished(results.SUCCESS)
         else:
             self.failed(failure.Failure(error))
+
+
+class DestroyOldImages(_EC2BuildStep):
+
+    """
+    Destroy old versions of an appliance image
+    """
+
+    def __init__(self, appliance=None, **kw):
+        _EC2BuildStep.__init__(self, **kw)
+        self.appliance = appliance
+        if appliance is None:
+            raise TypeError('appliance argument is required')
+        self.addFactoryArguments(appliance=appliance)
+
+    @defer.inlineCallbacks
+    def start(self):
+        ok, error = yield threads.deferToThread(self._destroy_old_images)
+        if ok:
+            self.finished(results.SUCCESS)
+        else:
+            self.failed(failure.Failure(error))
+
+    def _destroy_old_images(self):
+        ok = False
+        error = None
+
+        try:
+            images = find_images(self.region, tags=dict(appliance=self.appliance))
+            images.sort(key=lambda x: x.tags['timestamp'])
+            ids = [each.id for each in images[:-MAX_APPLIANCE_VERSIONS]]
+            delete_images(self.region, ids)
+            ok = True
+
+        except (boto.exception.BotoClientError,
+                boto.exception.BotoServerError) as error:
+            ok = False
+
+        if error:
+            logging.error('Could not destroy old images: {}'.format(error))
+
+        return ok, error

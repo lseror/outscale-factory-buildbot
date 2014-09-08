@@ -62,6 +62,8 @@ def configure_builders(c, fc, repos, meta):
     )
 
     mergeRequests = fc.get('merge_build_requests', False)
+    maxApplianceVersions = fc.get('max_appliance_versions', 2)
+
     slavenames = [slave.slavename for slave in c['slaves']]
 
     c['builders'] = []
@@ -117,6 +119,7 @@ def configure_builders(c, fc, repos, meta):
         factory.addStep(buildsteps.DestroyOldImages(
             name='Destroy old images',
             appliance=appliance,
+            maxApplianceVersions=maxApplianceVersions,
             **ec2Args))
 
         name = 'Cleaning up build dirs'

@@ -22,9 +22,6 @@ from outscale_factory_buildbot.tools.delete_images import delete_images
 from outscale_factory_buildbot.tools.find_images import find_images
 from outscale_image_factory import create_ami
 
-# How many versions of an appliance image should be kept
-MAX_APPLIANCE_VERSIONS = 2
-
 
 class _EC2BuildStep(BuildStep):
 
@@ -197,12 +194,17 @@ class DestroyOldImages(_EC2BuildStep):
     Destroy old versions of an appliance image
     """
 
-    def __init__(self, appliance=None, **kw):
+    def __init__(self, appliance=None, maxApplianceVersions=None, **kw):
         _EC2BuildStep.__init__(self, **kw)
-        self.appliance = appliance
         if appliance is None:
             raise TypeError('appliance argument is required')
-        self.addFactoryArguments(appliance=appliance)
+        if maxApplianceVersions is None:
+            raise TypeError('maxApplianceVersions argument is required')
+        self.appliance = appliance
+        self.maxApplianceVersions = maxApplianceVersions
+        self.addFactoryArguments(
+            appliance=appliance,
+            maxApplianceVersions=maxApplianceVersions)
 
     @defer.inlineCallbacks
     def start(self):
@@ -219,7 +221,7 @@ class DestroyOldImages(_EC2BuildStep):
         try:
             images = find_images(self.region, tags=dict(appliance=self.appliance))
             images.sort(key=lambda x: x.tags['timestamp'])
-            ids = [each.id for each in images[:-MAX_APPLIANCE_VERSIONS]]
+            ids = [each.id for each in images[:-self.maxApplianceVersions]]
             delete_images(self.region, ids)
             ok = True
 

@@ -17,7 +17,7 @@ def find_images(region, pattern='', tags={}):
     conn = boto.ec2.connect_to_region(region)
     filters = {}
     if tags:
-        filters.update(('tag' + k, tags[k]) for k in tags)
+        filters.update(('tag:' + k, tags[k]) for k in tags)
     images = conn.get_all_images(filters=filters)
     if pattern:
         images = [each for each in images

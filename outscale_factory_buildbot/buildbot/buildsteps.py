@@ -78,8 +78,9 @@ class AttachNewVolume(_EC2BuildStep):
         """
         Start the buildstep.
         """
-        assert isinstance(self.buildslave, EC2LatentBuildSlave)
-        instance_id = self.buildslave.instance.id
+        instance_id = self.getProperty('instance_id')
+        assert instance_id
+
         volume_tags = dict(self.object_tags)
         volume_tags['timestamp'] = self._timestamp()
 
@@ -92,7 +93,6 @@ class AttachNewVolume(_EC2BuildStep):
             self.location,
             volume_tags)
 
-        self.setProperty('instance_id', instance_id)
         self.setProperty('volume_id', volume_id)
         self.setProperty('device', device)
         self.setProperty('volume_tags', volume_tags)

@@ -5,7 +5,7 @@ import shlex
 
 from buildbot.process.factory import BuildFactory
 from buildbot.steps.source.git import Git
-from buildbot.steps.shell import ShellCommand
+from buildbot.steps.shell import ShellCommand, SetProperty
 from buildbot.process.properties import Property
 from buildbot.process import slavebuilder
 from buildbot.config import BuilderConfig
@@ -85,6 +85,12 @@ def configure_builders(c, fc, repos, meta):
             mode='incremental',
             branch=branch,
             submodules=True))
+
+        factory.addStep(SetProperty(
+            name='Retrieving instance id',
+            haltOnFailure=True,
+            command=['curl', '--silent', 'http://169.254.169.254/latest/meta-data/instance-id'],
+            property='instance_id'))
 
         factory.addStep(buildsteps.AttachNewVolume(
             name='Creating build volume',

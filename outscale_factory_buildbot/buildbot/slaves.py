@@ -44,12 +44,12 @@ def _configure_ec2_buildslaves(c, fc, repos, meta):
 
     # AWS settings
     region = fc['region']
-    keypair = fc['keypair']
-    security_group = fc['security_group']
+    keypair = fc['ec2_slaves']['keypair']
+    security_group = fc['ec2_slaves']['security_group']
 
     # Slave count
     repo_count = len(repos)
-    max_instances = fc['max_instances']
+    max_instances = fc['ec2_slaves']['max_instances']
     slave_instance_count = min(repo_count, max_instances)
 
     # Slave instance settings

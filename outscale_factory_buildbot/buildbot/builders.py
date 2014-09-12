@@ -50,7 +50,7 @@ def configure_builders(c, fc, repos, meta):
         object_tags=fc.get('slave_objects_tags', {'slave': 'slave'})
     )
     mountPoint = fc.get('slave_build_mount_point', '/mnt/%s')
-    workDir = fc.get('slave_build_work_dir', '/srv/%s')
+    workDir = fc.get('slave_build_work_dir', '/srv/outscale-factory-slave/work/%s')
     baseBuildCmd = fc.get('slave_build_command', 'build_ami -v')
     baseBuildCmd = shlex.split(baseBuildCmd)
     masterAddr = 'http://' + meta['public-ipv4']

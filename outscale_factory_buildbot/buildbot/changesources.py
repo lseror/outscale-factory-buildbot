@@ -11,7 +11,7 @@ def configure_changesources(c, fc, repos, meta):
     pollinterval = fc['git_poll_interval_seconds']
 
     for appliance, repourl, branch in repos:
-        workdir = 'gitpoller-{}'.format(appliance)
+        workdir = 'gitpollers/{}'.format(appliance)
         c['change_source'].append(GitPoller(
             repourl=repourl,
             project=appliance,

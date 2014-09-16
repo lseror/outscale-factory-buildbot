@@ -2,8 +2,8 @@
 Status targets config
 """
 from buildbot.status import html
-from buildbot.status.web import authz, auth
-
+from buildbot.status.web.authz import Authz
+from buildbot.status.web.auth import HTPasswdAuth
 
 def configure_status(c, fc, repos, meta):
     # STATUS TARGETS
@@ -11,14 +11,10 @@ def configure_status(c, fc, repos, meta):
     # pushed to these targets. buildbot/status/*.py has a variety to choose from,
     # including web pages, email senders, and IRC bots.
     c['status'] = []
-    login = fc['web_status_login']
-    password = fc['web_status_password']
+    htpasswd_path = fc['web_status_htpasswd']
     http_port = fc['web_status_listen_port']
-    # Buildbot chokes on unicode credentials
-    login = login.encode('ascii')
-    password = password.encode('ascii')
-    authz_cfg = authz.Authz(
-        auth=auth.BasicAuth([(login, password)]),
+    authz_cfg = Authz(
+        auth=HTPasswdAuth(htpasswd_path),
         gracefulShutdown=False,
         forceBuild='auth',
         forceAllBuilds='auth',

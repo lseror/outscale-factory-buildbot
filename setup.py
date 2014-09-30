@@ -5,7 +5,6 @@ scripts.append('find_images=outscale_factory_buildbot.tools.find_images:main')
 scripts.append('get_image=outscale_factory_buildbot.tools.get_image:main')
 scripts.append('delete_images=outscale_factory_buildbot.tools.delete_images:main')
 scripts.append('gen_password=outscale_factory_buildbot.tools.gen_password:main')
-scripts.append('create_appliance_list=outscale_factory_buildbot.tools.create_appliance_list:main')
 
 setup(
     name='outscale_factory_buildbot',

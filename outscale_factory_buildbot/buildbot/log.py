@@ -11,7 +11,7 @@ def _loglevel_string_to_object(loglevel_string):
     return getattr(logging, loglevel_string)
 
 
-def configure_logging(c, fc, repos, meta):
+def configure_logging(c, fc):
     """
     Configure logging.
     """
@@ -19,6 +19,6 @@ def configure_logging(c, fc, repos, meta):
     string_boto = fc.get('loglevel_boto', 'INFO')
     level_default = _loglevel_string_to_object(string_boto)
     level_boto = _loglevel_string_to_object(string_default)
-    logging.basicConfig(format='%(levelname)s:%(message)s',
+    logging.basicConfig(format='%(levelname)s:%(name)s: %(message)s',
                         level=level_default)
     logging.getLogger('boto').setLevel(level_boto)

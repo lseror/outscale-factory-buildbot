@@ -117,6 +117,14 @@ def configure_builders(c, fc, repos, meta):
             appliance=appliance,
             **ec2Args))
 
+        if 'marketplace' in fc:
+            from outscale_factory_buildbot.buildbot.mpbuildsteps import AddImageToMarketplace
+            factory.addStep(AddImageToMarketplace(
+                name='Add image to marketplace',
+                haltOnFailure=False,
+                mpconfig=fc['marketplace'],
+                appliance=appliance))
+
         factory.addStep(buildsteps.DestroyVolume(
             name='Cleaning up volume',
             alwaysRun=True,

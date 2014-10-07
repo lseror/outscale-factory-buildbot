@@ -34,7 +34,14 @@ def find_references_in_file(appliance_dir, full_path):
                     yield (relative_path, num + 1, match.group(0))
 
 
-def find_references(appliance_dir):
+def find_package_references(appliance_dir):
+    """
+    Look for package references in standard TKL subdirs of appliance_dir
+    returns a list of (file, lineno, match)
+    """
+    if not os.path.exists(appliance_dir):
+        raise OSError('Appliance dir "{}" does not exist.'
+                      .format(appliance_dir))
     lst = []
     for name in ('conf.d', 'overlay'):
         root_path = os.path.join(appliance_dir, name)
@@ -60,7 +67,7 @@ def main():
     else:
         fp = sys.stdout
 
-    urls = find_references(args.appliance_dir)
+    urls = find_package_references(args.appliance_dir)
     json.dump(urls, fp, indent=2)
 
     return 0

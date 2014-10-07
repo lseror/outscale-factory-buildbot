@@ -1,6 +1,8 @@
 """
 Custom build steps used to communicate with the Marketplace.
 """
+import logging
+
 from datetime import datetime
 
 import dateutil.tz

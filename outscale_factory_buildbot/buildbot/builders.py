@@ -69,6 +69,7 @@ def configure_builders(c, fc, repos, meta):
     c['builders'] = []
     for appliance, repourl, branch in repos:
         factory = BuildFactory()
+        srcdir = '/turnkey/fab/products/{}'.format(appliance)
 
         buildCmd = baseBuildCmd + [
             '--turnkey-app', appliance,
@@ -81,7 +82,7 @@ def configure_builders(c, fc, repos, meta):
             name='Cloning repository',
             haltOnFailure=True,
             repourl=repourl,
-            workdir='/turnkey/fab/products/{}'.format(appliance),
+            workdir=srcdir,
             mode='incremental',
             branch=branch,
             submodules=True))
@@ -118,9 +119,15 @@ def configure_builders(c, fc, repos, meta):
             **ec2Args))
 
         if 'marketplace' in fc:
-            from outscale_factory_buildbot.buildbot.mpbuildsteps import AddImageToMarketplace
+            from outscale_factory_buildbot.buildbot.mpbuildsteps import \
+                FindPackageReferences, AddImageToMarketplace
+            factory.addStep(FindPackageReferences(
+                name='Searching for package references in appliance source',
+                haltOnFailure=True,
+                srcdir=srcdir,
+                ))
             factory.addStep(AddImageToMarketplace(
-                name='Add image to marketplace',
+                name='Adding image to marketplace',
                 haltOnFailure=False,
                 mpconfig=fc['marketplace'],
                 appliance=appliance))

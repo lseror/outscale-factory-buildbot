@@ -49,10 +49,6 @@ def configure_builders(c, fc, repos, meta):
         volume_gib=fc.get('build_volume_gib', 10),
         object_tags=fc.get('slave_objects_tags', {'slave': 'slave'})
     )
-    mountPoint = fc.get('slave_build_mount_point', '/mnt/%s')
-    workDir = fc.get('slave_build_work_dir', '/srv/outscale-factory-slave/work/%s')
-    baseBuildCmd = fc.get('slave_build_command', 'build_ami -v')
-    baseBuildCmd = shlex.split(baseBuildCmd)
     masterAddr = 'http://' + meta['public-ipv4']
     aptProxyPort = fc.get('master_apt_proxy_port', 3142)
     httpProxyPort = fc.get('master_http_proxy_port', 8124)
@@ -70,13 +66,6 @@ def configure_builders(c, fc, repos, meta):
     for appliance, repourl, branch in repos:
         factory = BuildFactory()
         srcdir = '/turnkey/fab/products/{}'.format(appliance)
-
-        buildCmd = baseBuildCmd + [
-            '--turnkey-app', appliance,
-            '--device', Property('device'),
-            '--mount-point', mountPoint % appliance,
-            '--work-dir', workDir % appliance,
-        ]
 
         factory.addStep(Git(
             name='Cloning repository',
@@ -108,7 +97,8 @@ def configure_builders(c, fc, repos, meta):
             description=name,
             descriptionDone='Appliance built',
             haltOnFailure=True,
-            command=buildCmd + ['--build-only'],
+            command=['omi-factory', 'tkl-build', '--device', Property('device'),
+                     appliance],
             env=buildEnv))
 
         factory.addStep(buildsteps.CreateImage(
@@ -149,7 +139,7 @@ def configure_builders(c, fc, repos, meta):
             description=name,
             descriptionDone='Build dirs cleaned',
             alwaysRun=True,
-            command=buildCmd + ['--clean-only'],
+            command=['omi-factory', 'tkl-clean', appliance],
             env=buildEnv))
 
         buildername = '{}-{}'.format(appliance, branch)

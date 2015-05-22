@@ -86,7 +86,7 @@ class AttachNewVolume(_EC2BuildStep):
 
         conn = yield threads.deferToThread(self._connect)
         volume_id, device, error = yield threads.deferToThread(
-            create_ami.attach_new_volume,
+            create_ami.create_volume,
             conn,
             instance_id,
             self.volume_gib,

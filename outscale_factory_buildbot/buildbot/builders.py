@@ -108,20 +108,6 @@ def configure_builders(c, fc, repos, meta):
             appliance=appliance,
             **ec2Args))
 
-        if 'marketplace' in fc:
-            from outscale_factory_buildbot.buildbot.mpbuildsteps import \
-                FindPackageReferences, AddImageToMarketplace
-            factory.addStep(FindPackageReferences(
-                name='Searching for package references in appliance source',
-                haltOnFailure=True,
-                srcdir=srcdir,
-                ))
-            factory.addStep(AddImageToMarketplace(
-                name='Adding image to marketplace',
-                haltOnFailure=False,
-                mpconfig=fc['marketplace'],
-                appliance=appliance))
-
         factory.addStep(buildsteps.DestroyVolume(
             name='Cleaning up volume',
             alwaysRun=True,

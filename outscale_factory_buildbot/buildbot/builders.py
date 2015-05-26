@@ -97,7 +97,16 @@ def configure_builders(c, fc, repos, meta):
             description=name,
             descriptionDone='Appliance built',
             haltOnFailure=True,
-            command=['omi-factory', 'tkl-build', '--device', Property('device'),
+            command=['omi-factory', 'tkl-build', appliance],
+            env=buildEnv))
+
+        name = 'Installing appliance'
+        factory.addStep(ShellCommand(
+            name=name,
+            description=name,
+            descriptionDone='Appliance installed',
+            haltOnFailure=True,
+            command=['omi-factory', 'tkl-install-iso', '--device', Property('device'),
                      appliance],
             env=buildEnv))
 
